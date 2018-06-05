@@ -338,6 +338,10 @@ public class StateProcessor extends AbstractProcessor {
                 }
 
                 String fieldName = fieldType.getFieldName(field);
+                String key = null;
+                if (isExtraRequired(field)) {
+                    key = field.getAnnotation(Extra.class).value();
+                }
 
                 BundlerWrapper bundler = bundlers.get(field);
                 if (bundler != null) {
@@ -351,7 +355,7 @@ public class StateProcessor extends AbstractProcessor {
                         restoreMethodBuilder = restoreMethodBuilder.addStatement("target.$N = HELPER.get$N(state, $S)", fieldName, mapping, fieldName);
                         if (isExtraRequired(field)) {
                             intentMethodBuilder = intentMethodBuilder
-                                    .addStatement("final java.lang.Object $N = HELPER_INTENT.get$N(state, $S)", fieldName, mapping, fieldName)
+                                    .addStatement("final java.lang.Object $N = HELPER_INTENT.get$N(state, $S)", fieldName, mapping, isNullOrEmpty(key) ? fieldName : key)
                                     .beginControlFlow("if ($N != null)", fieldName)
                                     .addStatement("target.$N = ($N)$N", fieldName, fieldTypeString, fieldName)
                                     .endControlFlow();
@@ -383,7 +387,7 @@ public class StateProcessor extends AbstractProcessor {
                                     genericName, mapping, fieldName);
                             if (isExtraRequired(field)) {
                                 intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.<$T>get$N(state, $S))", fieldName,
-                                        genericName, mapping, fieldName);
+                                        genericName, mapping, isNullOrEmpty(key) ? fieldName : key);
                             }
                         } else {
                             InsertedTypeResult insertedType = getInsertedType(field, true);
@@ -392,14 +396,14 @@ public class StateProcessor extends AbstractProcessor {
                                         fieldName, ClassName.get(insertedType.mTypeMirror), mapping, fieldName);
                                 if (isExtraRequired(field)) {
                                     intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.<$T>get$N(state, $S))",
-                                            fieldName, ClassName.get(insertedType.mTypeMirror), mapping, fieldName);
+                                            fieldName, ClassName.get(insertedType.mTypeMirror), mapping, isNullOrEmpty(key) ? fieldName : key);
                                 }
                             } else {
                                 restoreMethodBuilder = restoreMethodBuilder.addStatement("target.set$N(HELPER.get$N(state, $S))",
                                         fieldName, mapping, fieldName);
                                 if (isExtraRequired(field)) {
                                     intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.get$N(state, $S))",
-                                            fieldName, mapping, fieldName);
+                                            fieldName, mapping, isNullOrEmpty(key) ? fieldName : key);
                                 }
 
                             }
@@ -453,7 +457,7 @@ public class StateProcessor extends AbstractProcessor {
                                     .beginControlFlow("if (!accessible)")
                                     .addStatement("field.setAccessible(true)")
                                     .endControlFlow()
-                                    .addStatement("field.set$N(target, HELPER_INTENT.get$N(state, $S))", reflectionMapping, mapping, fieldName)
+                                    .addStatement("field.set$N(target, HELPER_INTENT.get$N(state, $S))", reflectionMapping, mapping, isNullOrEmpty(key) ? fieldName : key)
                                     .beginControlFlow("if (!accessible)")
                                     .addStatement("field.setAccessible(false)")
                                     .endControlFlow()
@@ -611,6 +615,10 @@ public class StateProcessor extends AbstractProcessor {
             enclosingElement = enclosingElement.getEnclosingElement();
         }
         return className.toString();
+    }
+
+    private static boolean isNullOrEmpty(String str){
+        return str == null || str.trim().length() == 0;
     }
 
     private static boolean isHungarianNotation(Element field) {

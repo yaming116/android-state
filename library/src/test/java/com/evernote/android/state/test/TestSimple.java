@@ -7,4 +7,8 @@ public class TestSimple {
     @State
     @Extra
     int field;
+
+    @State
+    @Extra("id")
+    int mId;
 }

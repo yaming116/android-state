@@ -71,6 +71,19 @@ public class BundlingTest {
     }
 
     @Test
+    public void testKeySimple() {
+        TestSimple object = createSavedInstance(TestSimple.class);
+
+        mBundle.putInt("field", 1);
+        mBundle.putInt("id", 2);
+
+        StateSaver.restoreIntentState(object, mBundle);
+
+        assertThat(object.field).isEqualTo(1);
+        assertThat(object.mId).isEqualTo(2);
+    }
+
+    @Test
     public void testProperty() {
         TestProperty object = createSavedInstance(TestProperty.class);
         object.setTest(5);

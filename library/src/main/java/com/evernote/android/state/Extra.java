@@ -25,5 +25,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.CLASS)
 public @interface Extra {
-    Class<? extends Bundler> value() default Bundler.class;
+    /**
+     *
+     * @return name
+     */
+    String value() default "";
 }

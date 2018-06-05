@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 
 import com.evernote.android.state.Extra;
+import com.evernote.android.state.State;
 import com.evernote.android.state.StateSaver;
 
 import java.util.ArrayList;
@@ -15,7 +16,8 @@ import java.util.ArrayList;
  */
 public class LintFailingActivityJava extends Activity {
 
-    @Extra
+    @Extra("mId")
+    @State
     int id;
 
     @Extra
