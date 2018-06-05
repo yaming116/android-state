@@ -160,6 +160,7 @@ public class StateProcessor extends AbstractProcessor {
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotations = new HashSet<>();
         annotations.add(State.class.getName());
+        annotations.add(Extra.class.getName());
         annotations.add(StateReflection.class.getName());
         return Collections.unmodifiableSet(annotations);
     }
@@ -173,6 +174,7 @@ public class StateProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
         final Set<Element> annotatedFields = new HashSet<>();
         annotatedFields.addAll(env.getElementsAnnotatedWith(State.class));
+        annotatedFields.addAll(env.getElementsAnnotatedWith(Extra.class));
         annotatedFields.addAll(env.getElementsAnnotatedWith(StateReflection.class));
 
         final Map<Element, BundlerWrapper> bundlers = new HashMap<>();
@@ -282,6 +284,19 @@ public class StateProcessor extends AbstractProcessor {
                     )
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(genericType, "target");
+            MethodSpec.Builder intentMethodBuilder = null;
+            if (!isView) {
+                intentMethodBuilder = MethodSpec.methodBuilder("restoreIntent")
+                        .addAnnotation(Override.class)
+                        .addAnnotation(
+                                AnnotationSpec
+                                        .builder(SuppressWarnings.class)
+                                        .addMember("value", "$S", "unchecked")
+                                        .build()
+                        )
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(genericType, "target");
+            }
 
             if (isView) {
                 saveMethodBuilder = saveMethodBuilder.returns(Parcelable.class).addParameter(Parcelable.class, "p");
@@ -297,10 +312,17 @@ public class StateProcessor extends AbstractProcessor {
             } else {
                 saveMethodBuilder = saveMethodBuilder.returns(void.class).addParameter(Bundle.class, "state");
                 restoreMethodBuilder = restoreMethodBuilder.returns(void.class).addParameter(Bundle.class, "state");
+                if (!isView) {
+                    intentMethodBuilder = intentMethodBuilder.returns(void.class).addParameter(Bundle.class, "state");
+                }
+
 
                 if (superType != null) {
                     saveMethodBuilder = saveMethodBuilder.addStatement("super.save(target, state)");
                     restoreMethodBuilder = restoreMethodBuilder.addStatement("super.restore(target, state)");
+                    if (!isView) {
+                        intentMethodBuilder = intentMethodBuilder.addStatement("super.restore(target, state)");
+                    }
                 }
             }
 
@@ -327,6 +349,14 @@ public class StateProcessor extends AbstractProcessor {
                     case FIELD:
                         saveMethodBuilder = saveMethodBuilder.addStatement("HELPER.put$N(state, $S, target.$N)", mapping, fieldName, fieldName);
                         restoreMethodBuilder = restoreMethodBuilder.addStatement("target.$N = HELPER.get$N(state, $S)", fieldName, mapping, fieldName);
+                        if (isExtraRequired(field)) {
+                            intentMethodBuilder = intentMethodBuilder
+                                    .addStatement("final java.lang.Object $N = HELPER_INTENT.get$N(state, $S)", fieldName, mapping, fieldName)
+                                    .beginControlFlow("if ($N != null)", fieldName)
+                                    .addStatement("target.$N = ($N)$N", fieldName, fieldTypeString, fieldName)
+                                    .endControlFlow();
+
+                        }
                         break;
 
                     case BOOLEAN_PROPERTY:
@@ -351,14 +381,27 @@ public class StateProcessor extends AbstractProcessor {
 
                             restoreMethodBuilder = restoreMethodBuilder.addStatement("target.set$N(HELPER.<$T>get$N(state, $S))", fieldName,
                                     genericName, mapping, fieldName);
+                            if (isExtraRequired(field)) {
+                                intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.<$T>get$N(state, $S))", fieldName,
+                                        genericName, mapping, fieldName);
+                            }
                         } else {
                             InsertedTypeResult insertedType = getInsertedType(field, true);
                             if (insertedType != null) {
                                 restoreMethodBuilder = restoreMethodBuilder.addStatement("target.set$N(HELPER.<$T>get$N(state, $S))",
                                         fieldName, ClassName.get(insertedType.mTypeMirror), mapping, fieldName);
+                                if (isExtraRequired(field)) {
+                                    intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.<$T>get$N(state, $S))",
+                                            fieldName, ClassName.get(insertedType.mTypeMirror), mapping, fieldName);
+                                }
                             } else {
                                 restoreMethodBuilder = restoreMethodBuilder.addStatement("target.set$N(HELPER.get$N(state, $S))",
                                         fieldName, mapping, fieldName);
+                                if (isExtraRequired(field)) {
+                                    intentMethodBuilder = intentMethodBuilder.addStatement("target.set$N(HELPER_INTENT.get$N(state, $S))",
+                                            fieldName, mapping, fieldName);
+                                }
+
                             }
                         }
                         break;
@@ -402,6 +445,23 @@ public class StateProcessor extends AbstractProcessor {
                                 .nextControlFlow("catch (Exception e)")
                                 .addStatement("throw new $T(e)", RuntimeException.class)
                                 .endControlFlow();
+                        if (isExtraRequired(field)) {
+                            intentMethodBuilder = intentMethodBuilder
+                                    .beginControlFlow("try")
+                                    .addStatement("$T field = target.getClass().getDeclaredField($S)", Field.class, fieldName)
+                                    .addStatement("boolean accessible = field.isAccessible()")
+                                    .beginControlFlow("if (!accessible)")
+                                    .addStatement("field.setAccessible(true)")
+                                    .endControlFlow()
+                                    .addStatement("field.set$N(target, HELPER_INTENT.get$N(state, $S))", reflectionMapping, mapping, fieldName)
+                                    .beginControlFlow("if (!accessible)")
+                                    .addStatement("field.setAccessible(false)")
+                                    .endControlFlow()
+                                    .nextControlFlow("catch (Exception e)")
+                                    .addStatement("throw new $T(e)", RuntimeException.class)
+                                    .endControlFlow();
+                        }
+
                         break;
 
                     case NOT_SUPPORTED:
@@ -424,7 +484,7 @@ public class StateProcessor extends AbstractProcessor {
             TypeName bundlerType = ParameterizedTypeName.get(ClassName.get(Bundler.class), WildcardTypeName.subtypeOf(Object.class));
             TypeName bundlerMap = ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class), bundlerType);
 
-            TypeSpec classBuilder = TypeSpec.classBuilder(className + StateSaver.SUFFIX)
+            TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className + StateSaver.SUFFIX)
                     .addModifiers(Modifier.PUBLIC)
                     .superclass(superTypeName)
                     .addTypeVariable(genericType)
@@ -440,13 +500,19 @@ public class StateProcessor extends AbstractProcessor {
                                     .addModifiers(Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
                                     .initializer("new $T($S, $N)", InjectionHelper.class, packageName + '.' + className + StateSaver.SUFFIX, "BUNDLERS")
                                     .build()
-                    )
+                    ).addField(FieldSpec.builder(InjectionHelper.class, "HELPER_INTENT")
+                            .addModifiers(Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
+                            .initializer("new $T($S, $N)", InjectionHelper.class, "", "BUNDLERS")
+                            .build())
                     .addMethod(saveMethodBuilder.build())
                     .addMethod(restoreMethodBuilder.build())
-                    .addOriginatingElement(classElement)
-                    .build();
+                    .addOriginatingElement(classElement);
 
-            JavaFile javaFile = JavaFile.builder(packageName, classBuilder).build();
+            if (intentMethodBuilder != null) {
+                classBuilder.addMethod(intentMethodBuilder.build());
+            }
+
+            JavaFile javaFile = JavaFile.builder(packageName, classBuilder.build()).build();
             if (!writeJavaFile(javaFile)) {
                 return true; // failed, stop processor here
             }
@@ -755,6 +821,10 @@ public class StateProcessor extends AbstractProcessor {
             }
         }
         return false;
+    }
+
+    private static boolean isExtraRequired(Element element) {
+        return element.getAnnotation(Extra.class) != null;
     }
 
     private boolean isPrimitiveMapping(String mapping) {

@@ -5,12 +5,21 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
+import com.evernote.android.state.Extra;
 import com.evernote.android.state.StateSaver;
+
+import java.util.ArrayList;
 
 /**
  * @author rwondratschek
  */
 public class LintFailingActivityJava extends Activity {
+
+    @Extra
+    int id;
+
+    @Extra
+    ArrayList<Boolean> a;
 
     @SuppressLint("NonMatchingStateSaverCalls")
     @Override

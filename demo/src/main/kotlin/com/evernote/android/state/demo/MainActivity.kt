@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
 import android.util.Log
+import com.evernote.android.state.Extra
 
 import com.evernote.android.state.State
 import com.evernote.android.state.StateReflection
@@ -24,6 +25,7 @@ import com.evernote.android.state.StateReflection
 class MainActivity : FragmentActivity() {
 
     @State
+    @Extra
     var test1: Int = 0
 
     @StateReflection

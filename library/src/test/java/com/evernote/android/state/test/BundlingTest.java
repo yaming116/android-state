@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.evernote.android.state.test;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.test.mock.MockContext;
@@ -45,6 +46,26 @@ public class BundlingTest {
         object.field = 5;
 
         StateSaver.restoreInstanceState(object, mBundle);
+
+        assertThat(object.field).isEqualTo(0);
+    }
+
+    @Test
+    public void testSimple1() {
+        TestSimple object = createSavedInstance(TestSimple.class);
+        object.field = 5;
+        mBundle.putInt("field", 0);
+        StateSaver.restoreIntentState(object, mBundle);
+
+        assertThat(object.field).isEqualTo(0);
+    }
+
+    @Test
+    public void testSimple2() {
+        TestSimple object = createSavedInstance(TestSimple.class);
+        object.field = 5;
+
+        StateSaver.restoreIntentState(object, mBundle);
 
         assertThat(object.field).isEqualTo(0);
     }
@@ -163,6 +184,39 @@ public class BundlingTest {
         object.mParcelableArrayList = null;
 
         StateSaver.restoreInstanceState(object, mBundle);
+        assertThat(object.mInt).isEqualTo(5);
+        assertThat(object.mIntegerObj).isNotNull().isEqualTo(6);
+        assertThat(object.mParcelableArrayList).isNotNull().isNotEmpty().containsExactly(new TestTypes.ParcelableImpl(7));
+    }
+
+    @Test
+    public void testTypes1() {
+        TestTypes object = createSavedInstance(TestTypes.class);
+        object.mBooleanObj = Boolean.FALSE;
+
+        StateSaver.restoreIntentState(object, mBundle);
+        assertThat(object.mBooleanObj).isEqualTo(false);
+
+        mBundle.putBoolean("mBooleanObj", true);
+        StateSaver.restoreIntentState(object, mBundle);
+        assertThat(object.mBooleanObj).isEqualTo(true);
+
+        Intent intent = new Intent();
+        intent.putExtra("mBooleanObj", true);
+        StateSaver.restoreIntentState(object, intent.getExtras());
+        assertThat(object.mBooleanObj).isEqualTo(true);
+
+        object.mInt = 5;
+        object.mIntegerObj = 6;
+        object.mParcelableArrayList = new ArrayList<TestTypes.ParcelableImpl>() {{
+            add(new TestTypes.ParcelableImpl(7));
+        }};
+
+        mBundle.putInt("mInt", 5);
+        mBundle.putInt("mIntegerObj", 6);
+        mBundle.putParcelableArrayList("mParcelableArrayList", object.mParcelableArrayList);
+
+        StateSaver.restoreIntentState(object, mBundle);
         assertThat(object.mInt).isEqualTo(5);
         assertThat(object.mIntegerObj).isNotNull().isEqualTo(6);
         assertThat(object.mParcelableArrayList).isNotNull().isNotEmpty().containsExactly(new TestTypes.ParcelableImpl(7));

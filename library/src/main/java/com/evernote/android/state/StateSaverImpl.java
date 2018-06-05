@@ -87,6 +87,19 @@ final class StateSaverImpl {
     }
 
     /**
+     * Restore the given {@code target} from the passed in intent {@link Bundle}.
+     *
+     * @param target The object containing fields annotated with {@link State}.
+     * @param state  The object is being restored from this bundle. Nothing is restored if the argument is {@code null}.
+     */
+    /*package*/ <T> void restoreIntentState(@NonNull T target, @Nullable Bundle state) {
+        if (state != null) {
+            Injector.ObjectExtra<T> injector = safeGet(target, Injector.Object.DEFAULT);
+            injector.restoreIntent(target, state);
+        }
+    }
+
+    /**
      * Save the state of the given view and the other state inside of the returned {@link Parcelable}.
      *
      * @param target The view containing fields annotated with {@link State}.

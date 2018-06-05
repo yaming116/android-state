@@ -23,7 +23,11 @@ import android.support.v4.app.FragmentManager;
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         if (mEnabled) {
-            StateSaver.restoreInstanceState(activity, savedInstanceState);
+            if (savedInstanceState == null) {
+                StateSaver.restoreInstanceState(activity, savedInstanceState);
+            }else {
+                StateSaver.restoreIntentState(activity, activity.getIntent().getExtras());
+            }
         }
 
         if (activity instanceof FragmentActivity) {
@@ -41,7 +45,12 @@ import android.support.v4.app.FragmentManager;
     @Override
     public void onFragmentPreCreated(FragmentManager fm, Fragment f, Bundle savedInstanceState) {
         if (mEnabled) {
-            StateSaver.restoreInstanceState(f, savedInstanceState);
+            if (savedInstanceState == null) {
+                StateSaver.restoreInstanceState(f, savedInstanceState);
+            }else {
+                StateSaver.restoreInstanceState(f, f.getArguments());
+            }
+
         }
     }
 

@@ -19,8 +19,13 @@ public class Injector {
     protected Injector() {
     }
 
-    public abstract static class Object<T> extends Injector {
+    public abstract static class Object<T> extends ObjectExtra<T> {
         /*package*/ static final Object<?> DEFAULT = new Object<java.lang.Object>() {
+            @Override
+            public void restoreIntent(java.lang.Object target, Bundle state) {
+                // no op
+            }
+
             @Override
             public void restore(java.lang.Object target, Bundle state) {
                 // no op
@@ -35,6 +40,11 @@ public class Injector {
         public abstract void restore(T target, Bundle state);
 
         public abstract void save(T target, Bundle state);
+    }
+
+    public abstract static class ObjectExtra<T> extends Injector {
+
+        public abstract void restoreIntent(T target, Bundle state);
     }
 
     public abstract static class View<T> extends Injector {
