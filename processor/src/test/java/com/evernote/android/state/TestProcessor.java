@@ -74,6 +74,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestSimple$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -88,6 +90,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.field = HELPER.getInt(state, \"field\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         StateProcessor stateProcessor = new StateProcessor();
@@ -140,6 +146,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestProperty$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -154,6 +162,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.setTest(HELPER.getInt(state, \"Test\"));\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         Compilation compilation = Compiler.javac().withProcessors(new StateProcessor()).compile(javaFileObject);
@@ -218,6 +230,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestNested$Inner1$InnerInner1$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -232,6 +246,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.test = HELPER.getInt(state, \"test\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         JavaFileObject expected2 = JavaFileObjects.forSourceString(getName("TestNested$Inner2$InnerInner1", true), ""
@@ -251,6 +269,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestNested$Inner2$InnerInner1$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -265,6 +285,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.test = HELPER.getInt(state, \"test\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         StateProcessor stateProcessor = new StateProcessor();
@@ -351,6 +375,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestView$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -387,6 +413,8 @@ public class TestProcessor {
                 + "  private static final HashMap<String, Bundler<?>> BUNDLERS = new HashMap<String, Bundler<?>>();\n"
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestView$InnerView$$StateSaver\", BUNDLERS);\n"
+                + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
                 + "\n"
                 + "  static {\n"
                 + "  }\n"
@@ -483,6 +511,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestBundler$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "    BUNDLERS.put(\"Data2\", new TestBundler.MyBundler());\n"
                 + "  }\n"
@@ -498,6 +528,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.setData2(HELPER.<TestBundler.Data>getWithBundler(state, \"Data2\"));\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         Compilation compilation = Compiler.javac().withProcessors(new StateProcessor()).compile(javaFileObject);
@@ -667,6 +701,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestTypes$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -753,6 +789,10 @@ public class TestProcessor {
                 + "    target.mShort = HELPER.getShort(state, \"mShort\");\n"
                 + "    target.mShortArray = HELPER.getShortArray(state, \"mShortArray\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         Compilation compilation = Compiler.javac().withProcessors(new StateProcessor()).compile(javaFileObject);
@@ -1105,6 +1145,10 @@ public class TestProcessor {
                 + "      throw new RuntimeException(e);\n"
                 + "    }\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "\n"
                 + "  @Override\n"
                 + "  @SuppressWarnings(\"unchecked\")\n"
@@ -1201,6 +1245,10 @@ public class TestProcessor {
                 + "      throw new RuntimeException(e);\n"
                 + "    }\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         Compilation compilation = Compiler.javac().withProcessors(new StateProcessor()).compile(javaFileObject, javaFileObjectInnerClass);
@@ -1249,6 +1297,8 @@ public class TestProcessor {
                 + "\n"
                 + "  private static final InjectionHelper HELPER = new InjectionHelper(\"com.evernote.android.state.test.TestInheritance$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -1263,6 +1313,10 @@ public class TestProcessor {
                 + "  public void restore(T target, Bundle state) {\n"
                 + "    target.mValue1 = HELPER.getInt(state, \"mValue1\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "  }"
                 + "}\n");
 
         JavaFileObject expected2 = JavaFileObjects.forSourceString(getName("TestInheritance$InheritanceLevel2", true), ""
@@ -1282,6 +1336,8 @@ public class TestProcessor {
                 + "  private static final InjectionHelper HELPER = new InjectionHelper("
                 + "\"com.evernote.android.state.test.TestInheritance$InheritanceLevel2$$StateSaver\", BUNDLERS);\n"
                 + "\n"
+                + "  private static final InjectionHelper HELPER_INTENT = new InjectionHelper(\"\", BUNDLERS);\n"
+                + "\n"
                 + "  static {\n"
                 + "  }\n"
                 + "\n"
@@ -1298,6 +1354,11 @@ public class TestProcessor {
                 + "    super.restore(target, state);\n"
                 + "    target.mValue2 = HELPER.getInt(state, \"mValue2\");\n"
                 + "  }\n"
+                + "  @Override\n"
+                + "  @SuppressWarnings(\"unchecked\")\n"
+                + "  public void restoreIntent(T target, Bundle state) {\n"
+                + "    super.restore(target, state);"
+                + "  }"
                 + "}\n");
 
         Compilation compilation = Compiler.javac().withProcessors(new StateProcessor()).compile(javaFileObject);
